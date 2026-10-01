@@ -1,7 +1,6 @@
 """
 Modelo de datos formal para una Gramática Libre de Contexto (GLC)
 G = (V, T, P, S)
-Teoría de la Computación - UFPS
 """
 from typing import Set, List, Dict, Tuple
 from src.models.production import Production

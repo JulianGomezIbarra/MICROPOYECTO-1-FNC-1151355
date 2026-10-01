@@ -1,7 +1,5 @@
 """
 Módulo de registro y trazabilidad paso a paso de transformaciones.
-Cumplimiento de RF18, RF10 y RNF10.
-Teoría de la Computación - UFPS
 """
 from typing import List, Set, Any
 from src.models.grammar import Grammar
@@ -40,7 +38,7 @@ class TransformationStep:
         self.description: str = description
 
     def to_formatted_report(self) -> str:
-        """Genera el reporte detallado requerido en la sección RF18 del proyecto."""
+        """Genera el reporte."""
         lines = []
         separator = "=" * 65
         sub_sep = "-" * 65
@@ -91,7 +89,7 @@ class TransformationStep:
 
 
 class HistoryManager:
-    """Gestiona la lista cronológica de pasos y el historial de transformaciones."""
+    """Gestiona el historial de transformaciones."""
 
     def __init__(self):
         self.steps: List[TransformationStep] = []
@@ -104,6 +102,6 @@ class HistoryManager:
 
     def get_full_report(self) -> str:
         if not self.steps:
-            return "No se han ejecutado transformaciones en la gramática actual."
+            return "No se han realizado transformaciones."
         reports = [step.to_formatted_report() for step in self.steps]
         return "\n\n".join(reports)

@@ -1,7 +1,5 @@
 """
 Validador de Forma Normal de Chomsky (FNC).
-Cumplimiento de RF19 y RNF12.
-Teoría de la Computación - UFPS
 """
 from typing import List, Tuple
 from src.models.grammar import Grammar

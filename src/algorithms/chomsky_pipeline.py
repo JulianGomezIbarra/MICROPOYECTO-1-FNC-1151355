@@ -1,7 +1,6 @@
 """
 Orquestador del flujo de transformación a Forma Normal de Chomsky.
 Maneja tanto el Modo Paso a Paso como el Modo Automático.
-Teoría de la Computación - UFPS
 """
 from typing import Tuple, Optional
 from src.models.grammar import Grammar
@@ -36,7 +35,7 @@ class ChomskyPipeline:
         }
 
     def set_grammar(self, grammar: Grammar) -> None:
-        """Establece una nueva gramática y reinicia el proceso (RF20)."""
+        """Establece una nueva gramática y reinicia el proceso."""
         self.original_grammar = grammar.clone()
         self.current_grammar = grammar.clone()
         self.history.clear()
@@ -44,7 +43,7 @@ class ChomskyPipeline:
             self.step_executed[k] = False
 
     def validate_current(self) -> GrammarValidationResult:
-        """Valida los componentes de la gramática actual (RF06)."""
+        """Valida los componentes de la gramática actual."""
         if not self.current_grammar:
             return GrammarValidationResult(False, ["No hay ninguna gramática cargada."])
         res = GrammarValidator.validate(self.current_grammar)
@@ -53,7 +52,7 @@ class ChomskyPipeline:
         return res
 
     def step_null_productions(self) -> Optional[TransformationStep]:
-        """Ejecuta la eliminación de producciones nulas (RF07, RF08)."""
+        """Ejecuta la eliminación de producciones nulas."""
         if not self.current_grammar:
             return None
         self.current_grammar, step = NullProductionsEliminator.eliminate(self.current_grammar)
@@ -62,7 +61,7 @@ class ChomskyPipeline:
         return step
 
     def step_unit_productions(self) -> Optional[TransformationStep]:
-        """Ejecuta la eliminación de producciones unitarias (RF09, RF10)."""
+        """Ejecuta la eliminación de producciones unitarias."""
         if not self.current_grammar:
             return None
         self.current_grammar, step = UnitProductionsEliminator.eliminate(self.current_grammar)
@@ -71,7 +70,7 @@ class ChomskyPipeline:
         return step
 
     def step_useless_symbols(self) -> Optional[TransformationStep]:
-        """Ejecuta la eliminación de variables inútiles (no generadoras) (RF11, RF12)."""
+        """Ejecuta la eliminación de variables inútiles (no generadoras)."""
         if not self.current_grammar:
             return None
         self.current_grammar, step = UselessSymbolsEliminator.eliminate_non_generating(self.current_grammar)
@@ -80,7 +79,7 @@ class ChomskyPipeline:
         return step
 
     def step_unreachable_symbols(self) -> Optional[TransformationStep]:
-        """Ejecuta la eliminación de variables inalcanzables (RF13, RF14)."""
+        """Ejecuta la eliminación de variables inalcanzables."""
         if not self.current_grammar:
             return None
         self.current_grammar, step = UselessSymbolsEliminator.eliminate_unreachable(self.current_grammar)
@@ -91,8 +90,8 @@ class ChomskyPipeline:
     def step_convert_to_chomsky(self) -> Tuple[Optional[TransformationStep], Optional[TransformationStep]]:
         """
         Ejecuta la conversión a FNC:
-        1. Sustitución de terminales (RF15).
-        2. Binarización de producciones largas (RF16).
+        1. Sustitución de terminales.
+        2. Binarización de producciones largas.
         """
         if not self.current_grammar:
             return None, None
@@ -144,12 +143,12 @@ class ChomskyPipeline:
         # 5. Sustitución de terminales y Binarización
         self.step_convert_to_chomsky()
 
-        # Validación final FNC (RNF12)
+        # Validación final FNC
         fnc_check = self.validate_fnc()
         return fnc_check.is_fnc, fnc_check.get_report()
 
     def validate_fnc(self) -> FNCValidationResult:
-        """Verifica automáticamente si la gramática actual está en FNC (RNF12)."""
+        """Verifica automáticamente si la gramática actual está en FNC."""
         if not self.current_grammar:
             return FNCValidationResult(False, [])
         return FNCValidator.validate(self.current_grammar)

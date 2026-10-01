@@ -1,6 +1,5 @@
 """
 Modelos de datos para Gramáticas Libres de Contexto (GLC)
-Teoría de la Computación - UFPS
 """
 from typing import List, Tuple, Set
 

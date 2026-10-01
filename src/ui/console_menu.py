@@ -1,8 +1,5 @@
 """
 Interfaz de Consola Interactiva (CLI).
-Cumplimiento exacto del Menú Sugerido (Sección 12 del PDF)
-y Requerimientos de Usuario (RF01 - RF20, RNF01 - RNF05).
-Teoría de la Computación - UFPS
 """
 import sys
 import os
@@ -72,7 +69,6 @@ class ConsoleMenu:
             self._ingresar_bloque_texto()
             return
 
-        # Entrada interactiva guiada (RF01 - RF05)
         print("\nIngrese los datos solicitados:")
         vars_raw = input("• Ingrese las variables no terminales separadas por coma o espacio (ej: S, A, B): ")
         variables = GrammarParser.parse_symbol_list(vars_raw)
@@ -178,7 +174,7 @@ class ConsoleMenu:
         print(self.pipeline.original_grammar.to_formatted_string())
 
     def opt_3_validar_gramatica(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 3. Validación de la Gramática (RF06) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 3. Validación de la Gramática <<<{ConsoleColors.ENDC}")
         if not self.pipeline.current_grammar:
             print(f"{ConsoleColors.WARNING}No hay ninguna gramática registrada.{ConsoleColors.ENDC}")
             return
@@ -189,7 +185,7 @@ class ConsoleMenu:
             print(f"{ConsoleColors.FAIL}{res.get_summary()}{ConsoleColors.ENDC}")
 
     def opt_4_eliminar_nulas(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 4. Eliminación de Producciones Nulas (RF07, RF08) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 4. Eliminación de Producciones Nulas <<<{ConsoleColors.ENDC}")
         if not self._check_grammar():
             return
         step = self.pipeline.step_null_productions()
@@ -197,7 +193,7 @@ class ConsoleMenu:
             print(step.to_formatted_report())
 
     def opt_5_eliminar_unitarias(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 5. Eliminación de Producciones Unitarias (RF09, RF10) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 5. Eliminación de Producciones Unitarias <<<{ConsoleColors.ENDC}")
         if not self._check_grammar():
             return
         step = self.pipeline.step_unit_productions()
@@ -205,7 +201,7 @@ class ConsoleMenu:
             print(step.to_formatted_report())
 
     def opt_6_eliminar_inutiles(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 6. Eliminación de Variables Inútiles (No generadoras) (RF11, RF12) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 6. Eliminación de Variables Inútiles (No generadoras) <<<{ConsoleColors.ENDC}")
         if not self._check_grammar():
             return
         step = self.pipeline.step_useless_symbols()
@@ -213,7 +209,7 @@ class ConsoleMenu:
             print(step.to_formatted_report())
 
     def opt_7_eliminar_inalcanzables(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 7. Eliminación de Variables Inalcanzables (RF13, RF14) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 7. Eliminación de Variables Inalcanzables <<<{ConsoleColors.ENDC}")
         if not self._check_grammar():
             return
         step = self.pipeline.step_unreachable_symbols()
@@ -221,7 +217,7 @@ class ConsoleMenu:
             print(step.to_formatted_report())
 
     def opt_8_convertir_fnc(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 8. Conversión a Forma Normal de Chomsky (RF15, RF16, RF17) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 8. Conversión a Forma Normal de Chomsky <<<{ConsoleColors.ENDC}")
         if not self._check_grammar():
             return
         step_term, step_bin = self.pipeline.step_convert_to_chomsky()
@@ -242,11 +238,11 @@ class ConsoleMenu:
         print("=" * 65)
 
     def opt_10_mostrar_historial(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 10. Historial de Transformaciones (RF18) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 10. Historial de Transformaciones <<<{ConsoleColors.ENDC}")
         print(self.pipeline.history.get_full_report())
 
     def opt_11_mostrar_gramatica_final(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 11. Gramática Resultante Final (RF19) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 11. Gramática Resultante Final <<<{ConsoleColors.ENDC}")
         if not self.pipeline.current_grammar:
             print(f"{ConsoleColors.WARNING}No hay ninguna gramática cargada.{ConsoleColors.ENDC}")
             return
@@ -256,7 +252,7 @@ class ConsoleMenu:
         print(val.get_report())
 
     def opt_12_reiniciar(self):
-        print(f"\n{ConsoleColors.BOLD}>>> 12. Reiniciar Proceso e Ingresar Nueva Gramática (RF20) <<<{ConsoleColors.ENDC}")
+        print(f"\n{ConsoleColors.BOLD}>>> 12. Reiniciar Proceso e Ingresar Nueva Gramática <<<{ConsoleColors.ENDC}")
         confirm = input("¿Está seguro de reiniciar el proceso actual? (s/n): ").strip().lower()
         if confirm == "s":
             self.opt_1_ingresar_gramatica()
@@ -297,7 +293,7 @@ class ConsoleMenu:
             elif choice == "12":
                 self.opt_12_reiniciar()
             elif choice == "13":
-                print(f"\n{ConsoleColors.GREEN}Gracias por utilizar el aplicativo. ¡Éxitos en la sustentación!{ConsoleColors.ENDC}\n")
+                print(f"\n{ConsoleColors.GREEN}Gracias por utilizar el aplicativo.{ConsoleColors.ENDC}\n")
                 break
             else:
                 print(f"{ConsoleColors.FAIL}Opción no válida. Por favor elija un número entre 1 y 13.{ConsoleColors.ENDC}")

@@ -1,6 +1,5 @@
 """
-Algoritmo de Identificación y Eliminación de Producciones Nulas (RF07, RF08).
-Teoría de la Computación - UFPS
+Algoritmo de Identificación y Eliminación de Producciones Nulas.
 """
 from typing import Set, List, Tuple
 from itertools import product

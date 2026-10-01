@@ -1,6 +1,5 @@
 """
-Algoritmo de Identificación y Eliminación de Producciones Unitarias (RF09, RF10).
-Teoría de la Computación - UFPS
+Algoritmo de Identificación y Eliminación de Producciones Unitarias.
 """
 from typing import Set, List, Tuple, Dict
 from src.models.grammar import Grammar

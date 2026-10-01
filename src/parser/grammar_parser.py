@@ -1,7 +1,5 @@
 """
 Parser y lector de Gramáticas Libres de Contexto (GLC)
-Cumplimiento de RF01, RF02, RF03, RF04, RF05.
-Teoría de la Computación - UFPS
 """
 from typing import Set, List, Tuple
 from src.models.grammar import Grammar

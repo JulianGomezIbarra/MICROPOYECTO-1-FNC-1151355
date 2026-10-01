@@ -1,7 +1,5 @@
 """
 Conversión a Forma Normal de Chomsky (FNC).
-Cumplimiento de RF15, RF16, RF17 y RF19.
-Teoría de la Computación - UFPS
 """
 from typing import Set, List, Tuple, Dict
 from src.models.grammar import Grammar
@@ -12,15 +10,15 @@ from src.history.transformation_step import TransformationStep
 class ChomskyConverter:
     """
     Realiza las transformaciones estructurales para que la gramática cumpla FNC:
-    1. Sustitución de símbolos terminales en producciones de longitud >= 2 (RF15).
-    2. Binarización / reducción de producciones con longitud > 2 (RF16).
-    3. Generación determinista y única de variables auxiliares (RF17).
+    1. Sustitución de símbolos terminales en producciones de longitud >= 2.
+    2. Binarización / reducción de producciones con longitud > 2.
+    3. Generación determinista y única de variables auxiliares.
     """
 
     @classmethod
     def _generate_new_variable_name(cls, prefix: str, existing_vars: Set[str], counter: int) -> Tuple[str, int]:
         """
-        Genera un nombre único de variable auxiliar que no exista en el conjunto (RF17).
+        Genera un nombre único de variable auxiliar que no exista en el conjunto.
         """
         current_counter = counter
         while True:
@@ -32,7 +30,7 @@ class ChomskyConverter:
     @classmethod
     def substitute_terminals(cls, grammar: Grammar) -> Tuple[Grammar, TransformationStep]:
         """
-        RF15: En producciones de longitud >= 2, sustituye los símbolos terminales
+        En producciones de longitud >= 2, sustituye los símbolos terminales
         por nuevas variables auxiliares que produzcan exclusivamente ese terminal.
         Ejemplo: Si S -> aB, se crea X_a -> a y la regla queda S -> X_a B.
         """
@@ -108,7 +106,7 @@ class ChomskyConverter:
     @classmethod
     def reduce_long_productions(cls, grammar: Grammar) -> Tuple[Grammar, TransformationStep]:
         """
-        RF16: Convierte producciones con más de 2 variables en producciones binarias.
+        Convierte producciones con más de 2 variables en producciones binarias.
         Ejemplo: A -> B C D  se transforma en:
                  A -> B X_1
                  X_1 -> C D

@@ -1,7 +1,5 @@
 """
 Algoritmos de Identificación y Eliminación de Variables Inútiles e Inalcanzables.
-Cumplimiento de RF11, RF12, RF13, RF14.
-Teoría de la Computación - UFPS
 """
 from typing import Set, List, Tuple
 from collections import deque
@@ -56,7 +54,7 @@ class UselessSymbolsEliminator:
     @classmethod
     def eliminate_non_generating(cls, grammar: Grammar) -> Tuple[Grammar, TransformationStep]:
         """
-        Elimina las variables no generadoras y toda producción que las contenga (RF11, RF12).
+        Elimina las variables no generadoras y toda producción que las contenga.
         """
         initial_grammar = grammar.clone()
         generating = cls.find_generating_variables(grammar)
@@ -114,7 +112,7 @@ class UselessSymbolsEliminator:
     @classmethod
     def find_reachable_variables(cls, grammar: Grammar) -> Set[str]:
         """
-        Determina las variables y símbolos alcanzables a partir del símbolo inicial S (RF13):
+        Determina las variables y símbolos alcanzables a partir del símbolo inicial S.
         Utiliza una búsqueda en anchura (BFS) comenzando desde S.
         """
         if not grammar.start_symbol or grammar.start_symbol not in grammar.variables:
@@ -136,7 +134,7 @@ class UselessSymbolsEliminator:
     @classmethod
     def eliminate_unreachable(cls, grammar: Grammar) -> Tuple[Grammar, TransformationStep]:
         """
-        Elimina las variables no alcanzables desde el símbolo inicial (RF13, RF14).
+        Elimina las variables no alcanzables desde el símbolo inicial.
         """
         initial_grammar = grammar.clone()
         reachable_vars = cls.find_reachable_variables(grammar)

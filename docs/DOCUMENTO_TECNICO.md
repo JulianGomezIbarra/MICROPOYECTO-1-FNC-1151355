@@ -8,7 +8,7 @@
 **Semestre:** 2026-02  
 **Institución:** Universidad Francisco de Paula Santander (UFPS)  
 **Facultad:** Ingeniería de Sistemas  
-**Autor:** Julian Gomez Ibarra (Código: 1151355)  
+**Autores:** Julian Gomez Ibarra (1151355) - Jesús Enrique Ruiz Acero (1152487)
 **Fecha:** Septiembre 2026  
 
 ---

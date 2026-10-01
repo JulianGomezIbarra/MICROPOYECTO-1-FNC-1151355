@@ -1,7 +1,5 @@
 """
 Validador de Gramáticas Libres de Contexto (GLC)
-Cumplimiento de RF06, RNF02 y Sección 8 del proyecto.
-Teoría de la Computación - UFPS
 """
 from typing import List, Tuple
 from src.models.grammar import Grammar
@@ -22,7 +20,7 @@ class GrammarValidationResult:
     def get_summary(self) -> str:
         lines = []
         if self.is_valid:
-            lines.append("[OK] La gramática es VÁLIDA y cumple con todos los requisitos formales.")
+            lines.append("[OK] La gramática es válida.")
         else:
             lines.append(f"[ERROR] Se encontraron {len(self.errors)} error(es) en la definición de la gramática:")
             for err in self.errors:
