@@ -110,15 +110,14 @@ class ChomskyPipeline:
 
     def execute_full_process(self) -> Tuple[bool, str]:
         """
-        Ejecuta todas las etapas consecutivamente en orden canónico (Modo Automático):
-        1. Validación inicial.
-        2. Eliminación de nulas.
-        3. Eliminación de unitarias.
-        4. Eliminación de inútiles (no generadoras).
-        5. Eliminación de inalcanzables.
-        6. Sustitución de terminales en producciones compuestas.
-        7. Reducción de producciones largas.
-        8. Validación automática FNC.
+        Ejecuta todas las etapas consecutivamente según el algoritmo requerido (Modo Automático):
+        1. Validación inicial de la GLC.
+        2. Eliminación de variables inútiles (no generadoras).
+        3. Eliminación de variables inalcanzables.
+        4. Eliminación de producciones nulas (ε).
+        5. Eliminación de producciones unitarias.
+        6. Conversión de producciones a FNC (sustitución de terminales y binarización).
+        7. Presentación y validación final de la gramática en FNC.
         """
         if not self.original_grammar:
             return False, "Error: No hay una gramática cargada para procesar."
@@ -127,28 +126,51 @@ class ChomskyPipeline:
         self.current_grammar = self.original_grammar.clone()
         self.history.clear()
 
-        # Validación
+        # Validación inicial
         val_res = self.validate_current()
         if not val_res.is_valid:
             return False, f"La gramática presenta errores y no puede procesarse:\n{val_res.get_summary()}"
 
-        # 1. Nulas
-        self.step_null_productions()
-        # 2. Unitarias
-        self.step_unit_productions()
-        # 3. No generadoras
+        # 1. Variables inútiles (no generadoras)
         self.step_useless_symbols()
-        # 4. Inalcanzables
+        # 2. Variables inalcanzables
         self.step_unreachable_symbols()
-        # 5. Sustitución de terminales y Binarización
+        # 3. Producciones nulas
+        self.step_null_productions()
+        # 4. Producciones unitarias
+        self.step_unit_productions()
+        # 5. Conversión a FNC (sustitución de terminales y reducción binaria)
         self.step_convert_to_chomsky()
 
-        # Validación final FNC
+        # 6. Validación y verificación final FNC
         fnc_check = self.validate_fnc()
         return fnc_check.is_fnc, fnc_check.get_report()
+
+    def get_final_chomsky_presentation(self) -> str:
+        """
+        Presenta formalmente la gramática final en Forma Normal de Chomsky
+        junto con el informe de verificación de cumplimiento de FNC.
+        """
+        if not self.current_grammar:
+            return "No hay ninguna gramática cargada."
+
+        fnc_check = self.validate_fnc()
+        lines = [
+            "=" * 65,
+            " PRESENTACIÓN DE LA GRAMÁTICA FINAL EN FORMA NORMAL DE CHOMSKY (FNC)",
+            "=" * 65,
+            "Definición formal G = (V, T, P, S):",
+            self.current_grammar.to_formatted_string(),
+            "-" * 65,
+            "ESTADO DE CUMPLIMIENTO CON LA FORMA NORMAL DE CHOMSKY:",
+            fnc_check.get_report(),
+            "=" * 65,
+        ]
+        return "\n".join(lines)
 
     def validate_fnc(self) -> FNCValidationResult:
         """Verifica automáticamente si la gramática actual está en FNC."""
         if not self.current_grammar:
             return FNCValidationResult(False, [])
         return FNCValidator.validate(self.current_grammar)
+

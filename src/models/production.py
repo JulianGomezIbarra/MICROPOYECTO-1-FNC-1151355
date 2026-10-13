@@ -11,12 +11,15 @@ class Production:
     de símbolos (terminales y/o variables), o la cadena vacía ('ε' o 'epsilon').
     """
     EPSILON = "ε"
+    EPSILON_ALIASES = ("ε", "λ", "lambda", "lam", "epsilon", "eps")
 
     def __init__(self, left: str, right: Tuple[str, ...]):
         self.left: str = left.strip()
-        # Normalizamos: si la tupla está vacía o contiene epsilon/ε, se estandariza a ('ε',)
+        # Normalizamos: si la tupla está vacía o contiene epsilon/lambda en cualquier combinación de mayúsculas/minúsculas
         cleaned_right: List[str] = [sym.strip() for sym in right if sym.strip()]
-        if not cleaned_right or cleaned_right == ["ε"] or cleaned_right == ["epsilon"] or cleaned_right == ["lambda"] or cleaned_right == ["λ"]:
+        if not cleaned_right or (
+            len(cleaned_right) == 1 and cleaned_right[0].lower() in self.EPSILON_ALIASES
+        ):
             self.right: Tuple[str, ...] = (self.EPSILON,)
         else:
             self.right = tuple(cleaned_right)
@@ -25,11 +28,13 @@ class Production:
     def from_string(cls, left: str, right_str: str) -> "Production":
         """
         Crea una producción a partir de una cadena para el lado derecho.
+        Acepta épsilon y lambda en mayúsculas, minúsculas o combinación de letras
+        (ej: 'ε', 'λ', 'epsilon', 'EPSILON', 'Epsilon', 'lambda', 'LAMBDA', 'eps', 'EPS').
         Si la cadena tiene espacios (ej. 'A B' o 'a B'), se separa por espacios.
         Si no tiene espacios pero tiene varios caracteres (ej. 'AB'), cada caracter es un símbolo.
         """
         right_str = right_str.strip()
-        if not right_str or right_str in (cls.EPSILON, "epsilon", "lambda", "λ"):
+        if not right_str or right_str.lower() in cls.EPSILON_ALIASES:
             return cls(left, (cls.EPSILON,))
         
         # Si tiene espacios, dividimos por espacios

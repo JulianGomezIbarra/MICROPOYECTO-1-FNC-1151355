@@ -43,7 +43,8 @@ class GrammarParser:
         rights: List[Tuple[str, ...]] = []
 
         for alt in alternatives:
-            if not alt or alt in (Production.EPSILON, "epsilon", "lambda", "λ"):
+            alt_clean = alt.strip()
+            if not alt_clean or alt_clean.lower() in Production.EPSILON_ALIASES:
                 rights.append((Production.EPSILON,))
             elif " " in alt:
                 # Separado por espacios explícitos

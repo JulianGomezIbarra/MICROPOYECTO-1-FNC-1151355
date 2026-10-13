@@ -121,22 +121,46 @@ class TestAlgorithms(unittest.TestCase):
         """
         g = GrammarParser.from_text_definition(text)
         
-        # 1. Nulas (no hay)
-        g1, _ = NullProductionsEliminator.eliminate(g)
-        # 2. Unitarias (no hay)
-        g2, _ = UnitProductionsEliminator.eliminate(g1)
-        # 3. Inútiles
-        g3, _ = UselessSymbolsEliminator.eliminate_non_generating(g2)
-        g4, _ = UselessSymbolsEliminator.eliminate_unreachable(g3)
-        # 4. Sustituir terminales
+        # 1. Inútiles (no generadoras)
+        g1, _ = UselessSymbolsEliminator.eliminate_non_generating(g)
+        # 2. Inalcanzables
+        g2, _ = UselessSymbolsEliminator.eliminate_unreachable(g1)
+        # 3. Nulas
+        g3, _ = NullProductionsEliminator.eliminate(g2)
+        # 4. Unitarias
+        g4, _ = UnitProductionsEliminator.eliminate(g3)
+        # 5. Sustituir terminales
         g5, _ = ChomskyConverter.substitute_terminals(g4)
-        # 5. Binarizar
+        # 6. Binarizar
         g6, _ = ChomskyConverter.reduce_long_productions(g5)
 
         # Validar con FNCValidator
         validation = FNCValidator.validate(g6)
         self.assertTrue(validation.is_fnc, msg=validation.get_report())
 
+    def test_pipeline_execution_order_and_casing(self):
+        from src.algorithms.chomsky_pipeline import ChomskyPipeline
+        # Caso con EPSILON en mayúsculas, Lambda, y terminales en mayúsculas
+        text = """
+        Variables: S, A, B
+        Terminales: X, y
+        Inicial: S
+        Producciones:
+        S -> A B | EPSILON
+        A -> X | Lambda
+        B -> y
+        """
+        g = GrammarParser.from_text_definition(text)
+        pipeline = ChomskyPipeline(g)
+        is_fnc, report = pipeline.execute_full_process()
+        self.assertTrue(is_fnc, msg=report)
+
+        # Verificar reporte final
+        presentation = pipeline.get_final_chomsky_presentation()
+        self.assertIn("FORMA NORMAL DE CHOMSKY", presentation)
+        self.assertIn("G = (V, T, P, S)", presentation)
+
 
 if __name__ == "__main__":
     unittest.main()
+

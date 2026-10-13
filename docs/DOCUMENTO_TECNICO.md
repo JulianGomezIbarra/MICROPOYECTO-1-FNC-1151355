@@ -222,13 +222,13 @@ classDiagram
 graph TD
     A([Inicio: Gramática G]) --> B[Validación Sintáctica y Semántica]
     B -->|Inválida| C[Mostrar Errores y Retornar]
-    B -->|Válida| D[1. Identificar Anulables y Eliminar Nulas]
-    D --> E[2. Calcular Pares Unitarios y Eliminar Unitarias]
-    E --> F[3. Identificar Generadoras y Eliminar No Generadoras]
-    F --> G[4. BFS desde S y Eliminar Inalcanzables]
+    B -->|Válida| D[1. Identificar Generadoras y Eliminar No Generadoras]
+    D --> E[2. BFS desde S y Eliminar Inalcanzables]
+    E --> F[3. Identificar Anulables y Eliminar Nulas]
+    F --> G[4. Calcular Pares Unitarios y Eliminar Unitarias]
     G --> H[5. Sustituir Terminales en Reglas Mixtas/Largas]
     H --> I[6. Binarizar Producciones Largas en Cascada]
-    I --> J[7. Validación Automática FNC]
+    I --> J[7. Presentación y Validación FNC]
     J --> K([Fin: Gramática FNC + Historial Completo])
 ```
 

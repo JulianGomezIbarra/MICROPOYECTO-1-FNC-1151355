@@ -61,11 +61,18 @@ class GrammarValidator:
         # 3. Símbolo inicial no vacío
         if not grammar.start_symbol:
             errors.append("Error: No se ha definido un símbolo inicial para la gramática.")
-        # 4. Símbolo inicial pertenece a V
+        # 4. Símbolo inicial pertenece a V exactamente como se declaró
         elif grammar.start_symbol not in grammar.variables:
-            errors.append(
-                f"Error: El símbolo inicial '{grammar.start_symbol}' no pertenece al conjunto de variables {grammar.variables}."
-            )
+            case_match = [v for v in grammar.variables if v.lower() == grammar.start_symbol.lower()]
+            if case_match:
+                errors.append(
+                    f"Error: El símbolo inicial '{grammar.start_symbol}' no coincide exactamente con la variable declarada '{case_match[0]}'. "
+                    f"El sistema valida estrictamente mayúsculas y minúsculas ('{grammar.start_symbol}' ≠ '{case_match[0]}')."
+                )
+            else:
+                errors.append(
+                    f"Error: El símbolo inicial '{grammar.start_symbol}' no pertenece al conjunto de variables {grammar.variables}."
+                )
 
         # 5. V y T deben ser conjuntos disjuntos (V ∩ T = ∅)
         intersection = grammar.variables.intersection(grammar.terminals)
@@ -78,15 +85,22 @@ class GrammarValidator:
         if not grammar.productions:
             errors.append("Error: No se registraron reglas de producción en la gramática.")
 
-        # 7. Validar cada producción
+        # 7. Validar cada producción con estricta sensibilidad a mayúsculas y minúsculas
         valid_symbols = grammar.variables.union(grammar.terminals).union({Production.EPSILON})
         
         for idx, prod in enumerate(grammar.productions, start=1):
-            # Lado izquierdo debe pertenecer a V
+            # Lado izquierdo debe coincidir exactamente con una variable declarada en V
             if prod.left not in grammar.variables:
-                errors.append(
-                    f"Error en producción #{idx} ({prod}): El lado izquierdo '{prod.left}' no fue declarado como variable."
-                )
+                case_match = [v for v in grammar.variables if v.lower() == prod.left.lower()]
+                if case_match:
+                    errors.append(
+                        f"Error en producción #{idx} ({prod}): El lado izquierdo '{prod.left}' no coincide exactamente con la variable declarada '{case_match[0]}'. "
+                        f"La validación es estrictamente sensible a mayúsculas y minúsculas ('{prod.left}' ≠ '{case_match[0]}')."
+                    )
+                else:
+                    errors.append(
+                        f"Error en producción #{idx} ({prod}): El lado izquierdo '{prod.left}' no fue declarado como variable en V."
+                    )
 
             # Lado derecho no debe estar vacío
             if not prod.right:
@@ -94,16 +108,24 @@ class GrammarValidator:
                     f"Error en producción #{idx} ({prod.left} ->): El lado derecho no contiene ningún símbolo."
                 )
 
-            # Validar que cada símbolo del lado derecho exista en V o T o sea ε
+            # Validar que cada símbolo del lado derecho coincida exactamente con V o T
             for symbol in prod.right:
                 if symbol not in valid_symbols:
-                    if symbol.isupper():
+                    case_var_match = [v for v in grammar.variables if v.lower() == symbol.lower()]
+                    case_term_match = [t for t in grammar.terminals if t.lower() == symbol.lower()]
+                    if case_var_match:
                         errors.append(
-                            f"Error en producción {prod.left} -> {' '.join(prod.right)}: La variable '{symbol}' no fue declarada en V."
+                            f"Error en producción {prod.left} -> {' '.join(prod.right)}: El símbolo '{symbol}' no fue declarado. "
+                            f"Existe la variable '{case_var_match[0]}' en V pero difiere en mayúsculas/minúsculas (la validación es estrictamente sensible a mayúsculas y minúsculas: '{symbol}' ≠ '{case_var_match[0]}')."
+                        )
+                    elif case_term_match:
+                        errors.append(
+                            f"Error en producción {prod.left} -> {' '.join(prod.right)}: El símbolo '{symbol}' no fue declarado. "
+                            f"Existe el terminal '{case_term_match[0]}' en T pero difiere en mayúsculas/minúsculas (la validación es estrictamente sensible a mayúsculas y minúsculas: '{symbol}' ≠ '{case_term_match[0]}')."
                         )
                     else:
                         errors.append(
-                            f"Error en producción {prod.left} -> {' '.join(prod.right)}: El símbolo terminal '{symbol}' no fue declarado en T."
+                            f"Error en producción {prod.left} -> {' '.join(prod.right)}: El símbolo '{symbol}' no fue declarado en el conjunto de variables (V) ni en el de terminales (T)."
                         )
 
             # Si produce epsilon, no debe estar acompañado de otros símbolos en la misma producción (ej: S -> ε A es inválido)

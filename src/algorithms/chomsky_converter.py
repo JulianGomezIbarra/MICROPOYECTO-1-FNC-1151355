@@ -36,7 +36,7 @@ class ChomskyConverter:
         """
         initial_grammar = grammar.clone()
         new_vars = set(grammar.variables)
-        existing_vars = set(grammar.variables)
+        existing_vars = set(grammar.variables).union(grammar.terminals)
         terminal_var_map: Dict[str, str] = {}  # 'a' -> 'X_a' o 'T1'
         
         aux_counter = 1
@@ -113,7 +113,7 @@ class ChomskyConverter:
         """
         initial_grammar = grammar.clone()
         new_vars = set(grammar.variables)
-        existing_vars = set(grammar.variables)
+        existing_vars = set(grammar.variables).union(grammar.terminals)
         aux_counter = 1
 
         removed_productions: List[Production] = []

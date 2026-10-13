@@ -19,23 +19,27 @@ El sistema registra y expone cada transformación intermedia, indicando claramen
 
 ## 🚀 Etapas del Proceso de Conversión
 1. **Validación Inicial de la GLC**:
-   - Existencia de variables, terminales y símbolo inicial.
-   - Pertenencia del símbolo inicial al conjunto de variables ($S \in V$).
-   - Detección de símbolos no declarados en las producciones.
-   - Integridad sintáctica de cada regla de producción.
-2. **Eliminación de Producciones Nulas ($A \to \varepsilon$)**:
-   - Identificación del conjunto de variables anulables ($V_{null}$).
-   - Sustitución combinatoria de variables anulables y remoción de $\varepsilon$.
-3. **Eliminación de Producciones Unitarias ($A \to B$)**:
-   - Determinación de pares unitarios y cálculo de la clausura unitaria.
-   - Sustitución de producciones directas por producciones efectivas.
-4. **Eliminación de Variables Inútiles**:
-   - **Identificación de variables generadoras**: Eliminación de variables y reglas que no producen cadenas de terminales.
-   - **Identificación de variables alcanzables**: Búsqueda en anchura/profundidad desde el símbolo inicial $S$ y eliminación de variables inaccesibles.
-5. **Conversión a Forma Normal de Chomsky (FNC)**:
-   - **Sustitución de terminales**: En producciones de longitud $\ge 2$, los terminales se reemplazan por variables auxiliares ($X_a \to a$).
-   - **Reducción de producciones largas**: Producciones con más de 2 no terminales se binarizan utilizando nuevas variables auxiliares ($X_1, X_2, \dots$).
-6. **Validación Automática FNC**:
+   - Existencia de variables, terminales y símbolo inicial ($S \in V$).
+   - Soporte flexible para variables y terminales tanto en mayúsculas como en minúsculas.
+   - Detección de símbolos no declarados e integridad sintáctica.
+2. **Eliminación de Variables Inútiles**:
+   - Identificación del conjunto de variables generadoras ($V_{gen}$).
+   - Eliminación de variables no generadoras y producciones asociadas.
+3. **Eliminación de Variables Inalcanzables**:
+   - Identificación de variables alcanzables mediante recorrido BFS desde el símbolo inicial $S$.
+   - Eliminación de variables inaccesibles.
+4. **Eliminación de Producciones Nulas ($A \to \varepsilon$)**:
+   - Identificación inductiva del conjunto de variables anulables ($V_{null}$).
+   - Soporte para épsilon / lambda en mayúsculas o minúsculas (`ε`, `λ`, `epsilon`, `EPSILON`, `lambda`, `LAMBDA`, `eps`).
+   - Sustitución combinatoria y remoción de reglas vacías.
+5. **Eliminación de Producciones Unitarias ($A \to B$)**:
+   - Determinación de pares unitarios transitivos mediante punto fijo.
+   - Sustitución de reglas unitarias por producciones no unitarias equivalentes.
+6. **Conversión a Forma Normal de Chomsky (FNC)**:
+   - **Sustitución de terminales**: En producciones de longitud $\ge 2$, los terminales se reemplazan por variables auxiliares ($X_i \to a$).
+   - **Reducción de producciones largas**: Producciones con más de 2 no terminales se binarizan en cascada ($X_j \dots$).
+7. **Presentación de la Gramática Final y Validación FNC**:
+   - Presentación formal de la tupla $G = (V, T, P, S)$ en FNC.
    - Verificación estricta de que todas las reglas cumplan $A \to BC$ o $A \to a$.
 
 ---
@@ -59,10 +63,21 @@ El sistema registra y expone cada transformación intermedia, indicando claramen
 ---
 
 ## 💻 Requisitos y Ejecución
-- **Python 3.8+**
-- Ejecución principal:
+
+### Opción 1: Ejecutable directo (Sin necesidad de instalar Python)
+Para la profesora o usuarios sin Python configurado en su equipo:
+- Simplemente hacer doble clic sobre **`Chomsky_FNC.exe`** (o en **`EJECUTAR.bat`**).
+- Abrirá de inmediato la Interfaz Gráfica (GUI) en pantalla completa/ventana de escritorio.
+
+### Opción 2: Desde código fuente (con Python)
+- Requiere **Python 3.8+**
+- Ejecución de la interfaz gráfica:
   ```bash
   python main.py
+  ```
+- Opcional por consola (CLI):
+  ```bash
+  python main.py --cli
   ```
 
 ---

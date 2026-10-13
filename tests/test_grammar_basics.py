@@ -66,6 +66,37 @@ class TestGrammarBasics(unittest.TestCase):
         self.assertFalse(result.is_valid)
         self.assertTrue(any("X" in err for err in result.errors))
 
+    def test_case_sensitivity_variables_lowercase(self):
+        # Variables declaradas en minúsculas deben ser válidas si coinciden exactamente
+        text = """
+        Variables: s, a, b
+        Terminales: 0, 1
+        Inicial: s
+        Producciones:
+        s -> a b | 0
+        a -> 0
+        b -> 1
+        """
+        g = GrammarParser.from_text_definition(text)
+        result = GrammarValidator.validate(g)
+        self.assertTrue(result.is_valid, msg=result.get_summary())
+
+    def test_case_sensitivity_mismatch(self):
+        # Variable declarada como 's' pero en producciones se usó 'S'
+        text = """
+        Variables: s, a
+        Terminales: 0
+        Inicial: s
+        Producciones:
+        S -> a
+        a -> 0
+        """
+        g = GrammarParser.from_text_definition(text)
+        result = GrammarValidator.validate(g)
+        self.assertFalse(result.is_valid)
+        self.assertTrue(any("sensible a mayúsculas" in err for err in result.errors))
+
 
 if __name__ == "__main__":
     unittest.main()
+

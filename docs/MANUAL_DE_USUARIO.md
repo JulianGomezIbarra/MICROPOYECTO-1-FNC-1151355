@@ -207,11 +207,11 @@ Para convertir una gramática de forma integral e inmediata sin necesidad de pre
 
 ### ¿Cómo ejecutarla?
 - **En la GUI:** Haga clic en el botón principal **"▶ EJECUTAR PROCESO COMPLETO"**.
-- **En la CLI:** Seleccione la opción **9. Ejecutar proceso completo** del menú principal.
+- **En la CLI:** Seleccione la opción **10. Ejecutar proceso completo** del menú principal.
 
 ### Secuencia del Pipeline:
 El sistema ejecuta automáticamente la cadena de transformaciones en el **orden canónico estricto** exigido por la teoría formal:
-$$\text{Validación} \longrightarrow \text{Eliminar Nulas} \longrightarrow \text{Eliminar Unitarias} \longrightarrow \text{Eliminar No Generadoras} \longrightarrow \text{Eliminar Inalcanzables} \longrightarrow \text{Sustituir Terminales} \longrightarrow \text{Binarizar} \longrightarrow \text{Verificación FNC}$$
+$$\text{Validación} \longrightarrow \text{Eliminar Variables Inútiles} \longrightarrow \text{Eliminar Inalcanzables} \longrightarrow \text{Eliminar Nulas} \longrightarrow \text{Eliminar Unitarias} \longrightarrow \text{Sustituir Terminales} \longrightarrow \text{Binarizar} \longrightarrow \text{Presentación y Verificación FNC}$$
 
 Al finalizar, se imprime el informe completo de la traza histórica y se ejecuta el validador final de FNC emitiendo una alerta de confirmación.
 

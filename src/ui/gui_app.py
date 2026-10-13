@@ -16,8 +16,8 @@ class ChomskyGUIApp:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Conversor de GLC a Forma Normal de Chomsky (FNC) - UFPS")
-        self.root.geometry("1000x700")
-        self.root.minsize(800, 600)
+        self.root.geometry("1050x750")
+        self.root.minsize(900, 650)
 
         self.pipeline: ChomskyPipeline = ChomskyPipeline()
 
@@ -64,22 +64,31 @@ class ChomskyGUIApp:
         ttk.Button(quick_frame, text="Limpiar Todo", command=self.limpiar_todo).pack(fill=tk.X, pady=2)
 
         # Frame intermedio de control y operaciones
-        ops_frame = ttk.LabelFrame(self.root, text=" 2. Transformaciones y Operaciones ", padding=10)
+        ops_frame = ttk.LabelFrame(self.root, text=" 2. Transformaciones y Operaciones (Flujo del Algoritmo) ", padding=10)
         ops_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+
+        # Fila 1: Pasos secuenciales del algoritmo según especificación
+        lbl_steps = ttk.Label(ops_frame, text="Pasos Secuenciales del Algoritmo:", font=("Segoe UI", 9, "bold"))
+        lbl_steps.pack(anchor=tk.W, padx=2, pady=(0, 3))
 
         btn_row1 = ttk.Frame(ops_frame)
         btn_row1.pack(fill=tk.X, pady=2)
 
-        ttk.Button(btn_row1, text="Validar Gramática", command=self.validar_gramatica).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_row1, text="1. Eliminar λ-nulas", command=self.eliminar_nulas).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_row1, text="2. Eliminar Unitarias", command=self.eliminar_unitarias).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_row1, text="3. Eliminar No Generadoras", command=self.eliminar_inutiles).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_row1, text="4. Eliminar Inalcanzables", command=self.eliminar_inalcanzables).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btn_row1, text="1. Eliminar Variables Inútiles", command=self.eliminar_inutiles).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btn_row1, text="2. Eliminar Inalcanzables", command=self.eliminar_inalcanzables).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btn_row1, text="3. Eliminar λ-nulas", command=self.eliminar_nulas).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btn_row1, text="4. Eliminar Unitarias", command=self.eliminar_unitarias).pack(side=tk.LEFT, padx=3)
         ttk.Button(btn_row1, text="5. Convertir a FNC", command=self.convertir_fnc).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btn_row1, text="6. Gramática Final FNC", command=self.presentar_gramatica_final).pack(side=tk.LEFT, padx=3)
+
+        # Fila 2: Acciones globales y control
+        lbl_actions = ttk.Label(ops_frame, text="Acciones Globales y Control:", font=("Segoe UI", 9, "bold"))
+        lbl_actions.pack(anchor=tk.W, padx=2, pady=(6, 3))
 
         btn_row2 = ttk.Frame(ops_frame)
-        btn_row2.pack(fill=tk.X, pady=4)
+        btn_row2.pack(fill=tk.X, pady=2)
 
+        ttk.Button(btn_row2, text="Validar Gramática", command=self.validar_gramatica).pack(side=tk.LEFT, padx=3)
         ttk.Button(btn_row2, text="▶ EJECUTAR PROCESO COMPLETO", command=self.proceso_completo).pack(side=tk.LEFT, padx=3)
         ttk.Button(btn_row2, text="Verificar FNC", command=self.verificar_fnc).pack(side=tk.LEFT, padx=3)
         ttk.Button(btn_row2, text="Ver Gramática Actual", command=self.mostrar_gramatica_actual).pack(side=tk.LEFT, padx=3)
@@ -247,19 +256,22 @@ class ChomskyGUIApp:
         if step_bin:
             self._escribir_salida("\n" + step_bin.to_formatted_report())
 
+    def presentar_gramatica_final(self):
+        if not self._verificar_cargada():
+            return
+        self._escribir_salida("\n" + self.pipeline.get_final_chomsky_presentation())
+
     def proceso_completo(self):
         if not self._verificar_cargada():
             return
-        self._escribir_salida("\n" + "=" * 60, limpiar=True)
+        self._escribir_salida("\n" + "=" * 65, limpiar=True)
         self._escribir_salida("EJECUCIÓN DEL PROCESO COMPLETO (MODO AUTOMÁTICO)")
-        self._escribir_salida("=" * 60)
+        self._escribir_salida("=" * 65)
         success, report = self.pipeline.execute_full_process()
         self._escribir_salida(self.pipeline.history.get_full_report())
-        self._escribir_salida("=" * 60)
-        self._escribir_salida(report)
-        self._escribir_salida("=" * 60)
+        self._escribir_salida("\n" + self.pipeline.get_final_chomsky_presentation())
         if success:
-            messagebox.showinfo("Proceso Completo", "La gramática se transformó exitosamente a FNC.")
+            messagebox.showinfo("Proceso Completo", "La gramática se transformó exitosamente a Forma Normal de Chomsky (FNC).")
         else:
             messagebox.showwarning("Proceso Incompleto", report)
 

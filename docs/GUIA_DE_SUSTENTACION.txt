@@ -1,0 +1,394 @@
+================================================================================
+GUIA COMPLETA DE SUSTENTACION TECNICA Y DIDACTICA
+MICROPROYECTO #1: DEPURACION Y CONVERSION DE GLC A FORMA NORMAL DE CHOMSKY (FNC)
+================================================================================
+
+Institucion:  Universidad Francisco de Paula Santander (UFPS)
+Facultad:     Ingenieria - Plan de Estudios de Ingenieria de Sistemas
+Asignatura:   Teoria de la Computacion
+Estudiante:   Julian Enrique Gomez Ibarra (Codigo: 1151355)
+Docente:      Teoria de la Computacion - Semestre 2026-02
+
+================================================================================
+1. EL HILO CONDUCTOR GLOBAL (La Historia de Como Fluye el Programa)
+================================================================================
+
+Imagina este sistema como una fabrica de ensamblaje en linea continua.
+Una gramatica entra "en bruto" (con errores de formato, reglas vacias, intermediarios
+o simbolos que no sirven) y sale 100% estandarizada y limpia en Forma Normal de Chomsky.
+
+El flujo continuo sigue esta secuencia exacta:
+
+[Entrada de Usuario] 
+        |
+        v
+[1. GrammarParser]  --> Lee texto libre y lo desglosa en simbolos matematicos.
+        |
+        v
+[2. GrammarValidator] --> Filtro de seguridad: verifica que no haya simbolos inventados,
+        |                 que V y T no se crucen y que S pertenezca a V.
+        v
+[3. ChomskyPipeline]  --> Director de orquesta. Mantiene una copia intacta de la
+        |                 gramatica original y ejecuta el proceso paso a paso.
+        |
+        +---> [Paso 1: NullProductionsEliminator] (Quitar la nada: epsilon)
+        |          Calcula variables anulables por punto fijo y genera
+        |          todas las combinaciones de presencia/ausencia.
+        |
+        +---> [Paso 2: UnitProductionsEliminator] (Quitar intermediarios: A -> B)
+        |          Calcula la clausura transitiva (puentes directos A =>* B)
+        |          y salta los intermediarios copiando las reglas finales a A.
+        |
+        +---> [Paso 3: UselessSymbolsEliminator - No Generadoras]
+        |          Filtra variables que no pueden generar cadenas terminales
+        |          (evita ciclos infinitos sin base terminal).
+        |
+        +---> [Paso 4: UselessSymbolsEliminator - Inalcanzables]
+        |          Aplica una busqueda en anchura (BFS) desde el simbolo inicial S
+        |          y poda todas las variables aisladas.
+        |
+        +---> [Paso 5: ChomskyConverter - Sustitucion de Terminales]
+        |          En reglas compuestas (longitud >= 2), sustituye terminales
+        |          por nuevas variables auxiliares unicas (ej. X1 -> a).
+        |
+        +---> [Paso 6: ChomskyConverter - Binarizacion en Cascada]
+        |          Corta cualquier regla con mas de 2 variables en parejas de dos
+        |          usando nuevas variables auxiliares (ej. A -> B X2, X2 -> C D).
+        |
+        v
+[4. FNCValidator]     --> Juez independiente. Audita regla por regla y certifica
+        |                 que cada una sea exactamente A -> BC o A -> a.
+        v
+[5. HistoryManager]   --> Bitacora pedagogica. Guarda que se descubrio, que se borro,
+        |                 que se agrego y como quedo la gramatica en cada paso.
+        v
+[6. Interfaz (GUI/CLI)] -> Muestra los resultados en pantalla al usuario.
+
+
+================================================================================
+2. EXPLICACION DETALLADA DE CADA MODULO, CLASE Y FUNCION
+================================================================================
+
+--------------------------------------------------------------------------------
+MODULO 1: MODELOS FORMALES (src/models/)
+--------------------------------------------------------------------------------
+
+A. ARCHIVO: src/models/production.py (Clase Production)
+Modela una sola regla de reescritura: "Lo de la izquierda se convierte en lo de la derecha" (A -> alfa).
+
+1. Production.__init__(left: str, right: Tuple[str, ...]):
+   - Que hace: Registra la regla asegurando su inmutabilidad.
+   - Hilo interno: Toma el lado izquierdo, le quita espacios sueltos.
+     Luego revisa el lado derecho: si viene vacio o el usuario escribio 'epsilon',
+     'lambda', 'λ' o 'ε', lo normaliza y estandariza al caracter oficial 'ε'.
+     Guarda el lado derecho como tupla para que no pueda ser mutada por error
+     y pueda ser comparada en conjuntos matematicos (Set).
+
+2. Production.from_string(left: str, right_str: str) -> Production:
+   - Que hace: Fabrica una produccion a partir de texto digitado por una persona.
+   - Hilo interno: Si la cadena tiene espacios (ej. "A B" o "X1 a"), divide por
+     espacios respetando nombres de variables largas. Si no tiene espacios
+     (ej. "ab"), entiende que cada caracter es un simbolo independiente.
+
+3. Production.is_epsilon() -> bool:
+   - Que hace: Pregunta si la regla es nula (A -> ε).
+   - Hilo interno: Verifica si el lado derecho tiene longitud 1 y su simbolo es 'ε'.
+
+4. Production.is_unit(variables: Set[str]) -> bool:
+   - Que hace: Pregunta si la regla es unitaria (A -> B).
+   - Hilo interno: Revisa si la longitud es 1 y ese unico simbolo pertenece a V.
+
+5. Production.is_terminal_only(terminals: Set[str]) -> bool:
+   - Que hace: Pregunta si produce solo un terminal (A -> a).
+   - Hilo interno: Revisa si la longitud es 1 y ese simbolo pertenece a T.
+
+6. Production.is_binary_variables(variables: Set[str]) -> bool:
+   - Que hace: Pregunta si produce exactamente dos variables (A -> BC).
+   - Hilo interno: Revisa que la longitud sea 2 y que ambos simbolos pertenezcan a V.
+
+7. Production.is_in_chomsky_form(variables, terminals) -> bool:
+   - Que hace: Verifica la definicion matematica de FNC:
+     Retorna True si cumple 'is_terminal_only' O 'is_binary_variables'.
+
+8. Production.to_string_compact() -> str:
+   - Que hace: Formatea la regla limpiamente para pantalla. Si son simbolos
+     largos como X1 usa espacios; si son letras simples muestra "S -> AB".
+
+
+B. ARCHIVO: src/models/grammar.py (Clase Grammar)
+Es el contenedor de la cuadrupla formal G = (V, T, P, S).
+
+1. Grammar.__init__(variables, terminals, productions, start_symbol):
+   - Que hace: Guarda V y T como conjuntos (Set) para busquedas matematicas rapidas
+     en tiempo O(1), y P como lista para mantener el orden.
+
+2. Grammar.add_production(prod: Production):
+   - Que hace: Agrega una regla evitando duplicados repetidos (cumpliendo RNF08).
+
+3. Grammar.get_productions_for(variable: str) -> List[Production]:
+   - Que hace: Busca y devuelve todas las reglas que tienen a 'variable' a la izquierda.
+     Es fundamental para recorrer caminos de derivacion en los algoritmos.
+
+4. Grammar.clone() -> Grammar:
+   - Que hace: Saca una "fotocopia exacta e independiente" de toda la gramatica.
+   - Hilo interno: Crea nuevas instancias de cada regla y nuevos conjuntos.
+   - Importancia: Garantiza que cada paso del proceso tenga su propia version limpia,
+     permitiendo comparar el "antes" y el "despues" sin danar la original.
+
+5. Grammar.get_grouped_productions() -> Dict[str, List[Tuple[str, ...]]]:
+   - Que hace: Agrupa las reglas que comparten la misma letra izquierda en un
+     diccionario (ej. {'S': [('A', 'B'), ('a',)]}), base para la notacion con tuberias (|).
+
+6. Grammar.to_formatted_string() -> str:
+   - Que hace: Genera la representacion matematica canonica y ordenada:
+     V = { ... }
+     T = { ... }
+     S = ...
+     P = { S -> AB | a , ... }
+     Ordena alfabeticamente para presentacion determinista y coloca a S de primero.
+
+
+--------------------------------------------------------------------------------
+MODULO 2: PARSER Y VALIDACION (src/parser/)
+--------------------------------------------------------------------------------
+
+A. ARCHIVO: src/parser/grammar_parser.py (Clase GrammarParser)
+
+1. GrammarParser.parse_symbol_list(input_str: str) -> Set[str]:
+   - Que hace: Limpia entradas como "S, A, B" o "a b c" y devuelve un conjunto sin comas.
+
+2. GrammarParser.parse_production_line(line: str) -> (left, rights):
+   - Que hace: Procesa una linea completa como "S -> AB | a | ε".
+   - Hilo interno:
+     1. Corta por la flecha ("->" o "::=") separando la cabeza del cuerpo.
+     2. Corta el cuerpo por cada tuberia "|".
+     3. Convierte cada alternativa en una tupla de simbolos limpia.
+
+3. GrammarParser.from_text_definition(text: str) -> Grammar:
+   - Que hace: Permite cargar gramaticas enteras desde archivos o texto pegado.
+   - Hilo interno: Lee secciones como "Variables:", "Terminales:", "Inicial:", "Producciones:".
+     Si el usuario no especifica variables o terminales, el parser los infiere solo
+     (lo que esta a la izquierda son variables; lo que sobra a la derecha son terminales).
+
+
+B. ARCHIVO: src/parser/validator.py (Clase GrammarValidator)
+
+1. GrammarValidator.validate(grammar: Grammar) -> GrammarValidationResult:
+   - Que hace: El oficial de control de calidad. Aplica 8 filtros de rigor formal:
+     1. Que V no este vacio (|V| >= 1).
+     2. Que T no este vacio (|T| >= 1).
+     3. Que S este definido.
+     4. Que S pertenezca a V (S in V).
+     5. Que V y T sean conjuntos disjuntos (V ∩ T = ∅). Una letra no puede ser
+        variable y terminal al mismo tiempo.
+     6. Que haya al menos una regla de produccion en P.
+     7. Que cada regla tenga a la izquierda una variable declarada en V.
+     8. Que ningun simbolo usado a la derecha sea un "fantasma" que nadie declaro.
+     Retorna un objeto con la lista de errores y advertencias.
+
+
+--------------------------------------------------------------------------------
+MODULO 3: ALGORITMOS DE TRANSFORMACION (src/algorithms/)
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+ETAPA 1: ELIMINACION DE PRODUCCIONES NULAS (src/algorithms/null_productions.py)
+--------------------------------------------------------------------------------
+
+1. NullProductionsEliminator.find_nullable_variables(grammar) -> Set[str]:
+   - Que hace: Descubre matematicamente que variables pueden esfumarse en la nada (A =>* ε).
+   - Hilo de ejecucion:
+     * Paso Base: Busca que variables producen epsilon directamente (A -> ε) y las anota.
+     * Paso Inductivo (Punto Fijo): Entra en un ciclo 'while changed:'.
+       Revisa todas las reglas. Si existe una regla como S -> AB, y tanto A como B
+       ya estaban anotadas como anulables, entonces S tambien se vuelve anulable.
+       El ciclo se repite hasta que ninguna otra variable se agregue.
+
+2. NullProductionsEliminator.eliminate(grammar) -> (Grammar, TransformationStep):
+   - Que hace: Elimina las reglas A -> ε y genera todas las versiones equivalentes.
+   - Hilo de ejecucion:
+     1. Llama a 'find_nullable_variables'.
+     2. Guarda las reglas directas A -> ε para borrarlas.
+     3. Para cada produccion restante (ej. S -> aBb donde B es anulable):
+        Localiza donde estan las variables anulables.
+        Usa 'itertools.product([True, False], repeat=k)' como interruptores binarios:
+        - Si el interruptor esta en True, la variable B se queda (S -> aBb).
+        - Si el interruptor esta en False, la variable B se borra (S -> ab).
+     4. Si alguna combinacion deja el lado derecho completamente vacio, se descarta
+        para no reintroducir epsilon.
+     5. Arma la nueva gramatica limpia y empaqueta el reporte de la etapa.
+
+
+--------------------------------------------------------------------------------
+ETAPA 2: ELIMINACION DE PRODUCCIONES UNITARIAS (src/algorithms/unit_productions.py)
+--------------------------------------------------------------------------------
+
+1. UnitProductionsEliminator.find_unit_pairs(grammar) -> Set[Tuple[str, str]]:
+   - Que hace: Calcula todos los puentes directos e indirectos (A =>* B).
+   - Hilo de ejecucion (Clausura Transitiva):
+     * Paso 1 (Reflexividad): Agrega a todo simbolo consigo mismo: (A, A), (B, B)...
+     * Paso 2 (Transitividad): En un ciclo 'while changed:', si tenemos el par (A, B)
+       y existe una regla unitaria B -> C, une los extremos y agrega el par (A, C).
+       Esto resuelve ciclos cerrados como A -> B -> C -> A automaticamente sin bucles infinitos.
+
+2. UnitProductionsEliminator.eliminate(grammar) -> (Grammar, TransformationStep):
+   - Que hace: Suprime las reglas unitarias y copia las reglas utiles correspondientes.
+   - Hilo de ejecucion:
+     1. Guarda todas las reglas unitarias A -> B para borrarlas.
+     2. Agrupa las reglas no unitarias que tiene cada variable (ej. B -> a | cd).
+     3. Para cada par descubierto (A, B), si B producia 'a' o 'cd', ahora le crea
+        directamente a la variable A las reglas A -> a y A -> cd.
+     4. Arma la nueva gramatica sin intermediarios y genera el reporte.
+
+
+--------------------------------------------------------------------------------
+ETAPA 3 Y 4: DEPURACION DE SIMBOLOS INUTILES (src/algorithms/useless_symbols.py)
+--------------------------------------------------------------------------------
+
+FASE A: VARIABLES NO GENERADORAS
+1. UselessSymbolsEliminator.find_generating_variables(grammar) -> Set[str]:
+   - Que hace: Descubre que variables si son capaces de producir texto terminal (A =>* w in T*).
+   - Hilo de ejecucion:
+     * En la primera vuelta, anota las variables que producen directamente solo terminales (A -> a).
+     * En las siguientes vueltas del ciclo de punto fijo, si una variable produce
+       una combinacion de terminales y variables ya confirmadas como generadoras (B -> Aa),
+       B tambien se califica como generadora.
+     * Si una variable esta atrapada en un ciclo sin salida terminal (C -> CD), nunca entra.
+
+2. UselessSymbolsEliminator.eliminate_non_generating(grammar):
+   - Que hace: Elimina las variables que fallaron la prueba anterior (V - V_gen)
+     y borra cualquier produccion donde aparezcan, tanto a la izquierda como a la derecha.
+
+FASE B: VARIABLES INALCANZABLES
+3. UselessSymbolsEliminator.find_reachable_variables(grammar) -> Set[str]:
+   - Que hace: Encuentra a que variables se puede llegar partiendo de S.
+   - Hilo de ejecucion (Busqueda en Anchura - BFS):
+     * Mete a S en una cola (queue).
+     * Mientras haya variables en la cola, saca una y examina todas sus producciones.
+     * Cada nueva variable no visitada que encuentre en los lados derechos se anota
+       como alcanzable y se mete a la cola para seguir explorando sus conexiones.
+
+4. UselessSymbolsEliminator.eliminate_unreachable(grammar):
+   - Que hace: Elimina las variables "isla" a las que fue imposible llegar desde S,
+     junto con todas sus producciones asociadas.
+
+
+--------------------------------------------------------------------------------
+ETAPA 5 Y 6: CONVERSION A FORMA NORMAL DE CHOMSKY (src/algorithms/chomsky_converter.py)
+--------------------------------------------------------------------------------
+
+1. ChomskyConverter._generate_new_variable_name(prefix, existing_vars, counter):
+   - Que hace: Fabrica nombres unicos para las nuevas variables (X1, X2, X3...).
+   - Hilo interno: Incrementa el contador y revisa contra el conjunto V actual para
+     garantizar que el nombre no colisione con una variable que el usuario ya habia usado.
+
+2. ChomskyConverter.substitute_terminals(grammar):
+   - Que hace: Resuelve el problema de terminales mezclados (ej. S -> aB o S -> ab).
+   - Hilo de ejecucion:
+     1. Revisa todas las reglas de longitud 2 o mayor. Si encuentra un terminal, lo marca.
+     2. Para cada terminal marcado (ej. 'a'), crea una variable auxiliar (X1 -> a).
+     3. Reescribe las reglas compuestas cambiando la minuscula por la nueva variable
+        (S -> aB pasa a ser S -> X1 B).
+
+3. ChomskyConverter.reduce_long_productions(grammar):
+   - Que hace: Binarizacion en cascada para reglas con mas de 2 variables (ej. A -> B C D).
+   - Hilo de ejecucion:
+     1. Para reglas de longitud 1 o 2, las deja tal cual.
+     2. Para reglas largas (ej. A -> B C D E):
+        - Toma el primer simbolo (B) y crea una regla binaria apuntando a una nueva
+          variable auxiliar: A -> B X2
+        - Para la variable X2, toma el siguiente simbolo (C) y apunta a X3: X2 -> C X3
+        - Para la variable X3, toma los ultimos dos simbolos: X3 -> D E
+     De esta forma, cualquier cadena de longitud N se divide en reglas de longitud 2 exacta.
+
+
+--------------------------------------------------------------------------------
+MODULO 4: AUDITORIA Y CONTROL FINAL (src/algorithms/fnc_validator.py)
+--------------------------------------------------------------------------------
+
+1. FNCValidator.validate(grammar: Grammar) -> FNCValidationResult:
+   - Que hace: Auditor neutral e independiente. Comprueba que la gramatica resultante
+     cumpla estrictamente con la definicion matematica de FNC.
+   - Hilo de ejecucion:
+     Recorre cada una de las reglas producidas:
+     - Si la longitud derecha es 1: Exige que el simbolo este en T. Si es una variable,
+       avisa error (produccion unitaria); si es epsilon, avisa error (regla nula).
+     - Si la longitud derecha es 2: Exige que AMBOS simbolos esten en V.
+     - Si la longitud es 3 o mas: Avisa error (regla no binarizada).
+     Si no encuentra ningun error, emite el certificado de cumplimiento 100% FNC.
+
+
+--------------------------------------------------------------------------------
+MODULO 5: PIPELINE Y TRAZABILIDAD (src/algorithms/chomsky_pipeline.py y src/history/)
+--------------------------------------------------------------------------------
+
+A. ARCHIVO: src/algorithms/chomsky_pipeline.py (Clase ChomskyPipeline)
+Controlador central que orquesta el orden riguroso:
+
+1. execute_full_process() -> (bool, str):
+   - Que hace: Modo Automatico.
+   - Hilo interno:
+     1. Valida formalmente la gramatica inicial.
+     2. Invoca step_null_productions() (Paso 1).
+     3. Invoca step_unit_productions() (Paso 2).
+     4. Invoca step_useless_symbols() (Paso 3: no generadoras).
+     5. Invoca step_unreachable_symbols() (Paso 4: inalcanzables).
+     6. Invoca step_convert_to_chomsky() (Pasos 5 y 6: sustitucion y binarizacion).
+     7. Llama a validate_fnc() para verificar el resultado final.
+
+B. ARCHIVO: src/history/transformation_step.py (Clase TransformationStep y HistoryManager)
+1. TransformationStep.to_formatted_report() -> str:
+   - Que hace: Genera el informe transparente de cada paso con 4 secciones:
+     1. Elementos identificados (variables anulables, pares unitarios, etc.)
+     2. Producciones eliminadas [-]
+     3. Producciones agregadas [+]
+     4. Gramatica resultante de esa etapa
+
+
+================================================================================
+3. GUION Y LIBRETO PARA LA SUSTENTACION ORAL
+================================================================================
+
+A continuacion tienes las respuestas exactas y seguras a las preguntas mas frecuentes
+que realizan los docentes de Teoria de la Computacion:
+
+PREGUNTA 1: ¿Por que seguimos este orden de transformaciones?
+RESPUESTA:
+"Profesor, el algoritmo sigue el orden estricto de simplificación y normalización:
+1. Primero eliminamos variables inútiles (no generadoras), ya que cualquier regla que
+   involucre símbolos incapaces de derivar cadenas terminales debe depurarse de entrada.
+2. Segundo eliminamos variables inalcanzables desde S. Es fundamental hacerlo DESPUÉS
+   de las no generadoras, porque al podar reglas no generadoras, otras variables pueden
+   haber quedado desconectadas de S.
+3. Tercero eliminamos producciones nulas (ε) mediante combinatoria de anulables.
+4. Cuarto eliminamos producciones unitarias (A -> B) calculando la clausura transitiva.
+5. Quinto realizamos la conversión estructural a FNC (sustitución de terminales en
+   reglas largas y binarización en cascada).
+6. Sexto presentamos la gramática final certificando el cumplimiento riguroso de FNC."
+
+PREGUNTA 2: ¿Por que usas algoritmos de Punto Fijo en variables anulables y generadoras?
+RESPUESTA:
+"Porque se trata de propiedades inductivas dependientes. Una variable puede no ser
+anulable de forma directa, pero si deriva en variables que si lo son (ej. S -> AB),
+se vuelve anulable por induccion. El bucle de punto fijo ('while changed') garantiza
+matematicamente que recorremos todas las dependencias hasta que el conjunto se estabilice
+y no cambie mas, asegurando completitud formal."
+
+PREGUNTA 3: ¿Como se manejan las combinaciones al eliminar reglas nulas?
+RESPUESTA:
+"Si una produccion contiene k apariciones de variables anulables, matematicamente existen
+2 elevado a la k posibles combinaciones donde cada variable puede estar presente o ausente.
+En el codigo utilizamos 'itertools.product([True, False], repeat=k)' para evaluar de forma
+exhaustiva y elegante todos los subconjuntos binarios, descartando unicamente el caso
+donde todos los simbolos se anulan para no reintroducir epsilon."
+
+PREGUNTA 4: ¿Por que la validacion final en fnc_validator.py es independiente?
+RESPUESTA:
+"Para aplicar el principio de responsabilidad unica (SRP) y verificacion cruzada.
+El convertidor aplica las reglas de sustitucion y binarizacion, pero es el auditor
+FNCValidator quien evalua de forma neutra y estricta que todas las producciones
+resultantes tengan exactamente la estructura A -> BC o A -> a."
+
+================================================================================
+FIN DE LA GUIA DE SUSTENTACION
+================================================================================
